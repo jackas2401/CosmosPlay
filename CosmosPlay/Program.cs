@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Net;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Documents.SystemFunctions;
 using Newtonsoft.Json;
 
 namespace CosmosPlay
@@ -45,15 +47,49 @@ namespace CosmosPlay
         {
             this.client = new DocumentClient(new Uri(EndpointUri), PrimaryKey);
 
+            await this.client.DeleteDatabaseAsync(UriFactory.CreateDatabaseUri(DatabaseName));
+
             await this.client.CreateDatabaseIfNotExistsAsync(new Database { Id = DatabaseName });
 
-            await this.client.CreateDocumentCollectionIfNotExistsAsync(UriFactory.CreateDatabaseUri(DatabaseName), new DocumentCollection { Id = CollectionName });
+            DocumentCollection collectionDefinition = new DocumentCollection
+            {
+                Id = CollectionName
+            };
 
-            List<AuditEvent> AuditEvents = AuditEventFactory.GeneratAuditEvents(100, 100, 100);
+            collectionDefinition.IndexingPolicy.Automatic = true;
+
+            collectionDefinition.DefaultTimeToLive = -1;        // switch on TTL but no default expiry time
+            collectionDefinition.PartitionKey.Paths.Add("/moduleId");
+
+            // performance / load testing on indexes
+            collectionDefinition.IndexingPolicy.IncludedPaths.Add(
+                new IncludedPath
+                {
+                    Path = "/*",
+                    Indexes = new Collection<Index>
+                    {
+                        new RangeIndex(DataType.Number) { Precision = -1, DataType = DataType.Number},
+                        new RangeIndex(DataType.String) { Precision = -1, DataType = DataType.String}
+                    }
+                });
+
+            collectionDefinition.IndexingPolicy.ExcludedPaths.Add(new ExcludedPath {Path = "/newObject/?"});
+            collectionDefinition.IndexingPolicy.ExcludedPaths.Add(new ExcludedPath { Path = "/previousObject/?" });
+
+            DocumentCollection auditCollection = await this.client.CreateDocumentCollectionIfNotExistsAsync(
+                UriFactory.CreateDatabaseUri(DatabaseName), 
+                collectionDefinition,
+                new RequestOptions { OfferThroughput = 20000 } );
+
+            List<AuditEvent> AuditEvents = AuditEventFactory.GeneratAuditEvents(5, 5, 3);
 
             await CreateAuditRecords(AuditEvents);
-        }
 
+            ExecuteSimpleQuery();
+            ExecuteTextSearch();
+            ExecuteSqlStringSearch();
+            ExecuteDateSearch();
+        }
         private void WriteToConsoleAndPromptToContinue(string format, params object[] args)
         {
             Console.WriteLine(format, args);
@@ -65,14 +101,6 @@ namespace CosmosPlay
         {
             try
             {
-                //User user = new User()
-                //{
-                //    UserId = 1,
-                //    Username = "Andrew"
-                //};
-
-                //await this.client.CreateDocumentAsync(UriFactory.CreateDocumentCollectionUri(DatabaseName, CollectionName), user);
-
                 foreach (var auditEvent in AuditEvents)
                 {
                     await this.client.CreateDocumentAsync(UriFactory.CreateDocumentCollectionUri(DatabaseName, CollectionName), auditEvent);
@@ -82,24 +110,118 @@ namespace CosmosPlay
             {
                 Console.WriteLine(e);
                 throw;
+            }            
+        }
+
+        private void ExecuteSimpleQuery()
+        {
+            // Set some common query options
+            FeedOptions queryOptions = new FeedOptions
+            {
+                MaxItemCount = 10,  // more page size than max results
+                PartitionKey = new PartitionKey("Profiles"),
+                EnableScanInQuery = false,
+                EnableCrossPartitionQuery = false
+            };
+
+            IQueryable<AuditEvent> auditQuery = this.client.CreateDocumentQuery<AuditEvent>(
+                    UriFactory.CreateDocumentCollectionUri(DatabaseName, CollectionName), queryOptions)
+                .Where(a => a.IpAddress == "127.0.0.1" &&
+                            a.Action == AuditEvent.ActionType.Update);
+
+            // The query is executed synchronously here, but can also be executed asynchronously via the IDocumentQuery<T> interface
+            Console.WriteLine("Running LINQ query...");
+
+            Console.WriteLine("No. of records found: {0}", auditQuery.Count());
+
+            foreach (AuditEvent audit in auditQuery)
+            {
+                Console.WriteLine("\tRead {0}", audit);
+            }            
+        }
+
+        private void ExecuteTextSearch()
+        {
+            // Set some common query options
+            FeedOptions queryOptions = new FeedOptions
+            {
+                MaxItemCount = 10,  // more page size than max results
+                PartitionKey = new PartitionKey("Profiles"),
+                EnableScanInQuery = false,
+                EnableCrossPartitionQuery = false
+            };
+
+            IQueryable<AuditEvent> auditQuery = this.client.CreateDocumentQuery<AuditEvent>(
+                    UriFactory.CreateDocumentCollectionUri(DatabaseName, CollectionName), queryOptions)
+                .Where(a => a.NewObject.Contains("Andrew") ||
+                            a.PreviousObject.Contains("Andrew"));
+
+            // The query is executed synchronously here, but can also be executed asynchronously via the IDocumentQuery<T> interface
+            Console.WriteLine("Running LINQ query...");
+
+            Console.WriteLine("No. of records found: {0}", auditQuery.Count());
+
+            foreach (AuditEvent audit in auditQuery)
+            {
+                Console.WriteLine("\tRead {0}", audit);
             }
-            //try
-            //{
-            //    await this.client.ReadDocumentAsync(UriFactory.CreateDocumentUri(databaseName, collectionName, family.Id));
-            //    this.WriteToConsoleAndPromptToContinue("Found {0}", family.Id);
-            //}
-            //catch (DocumentClientException de)
-            //{
-            //    if (de.StatusCode == HttpStatusCode.NotFound)
-            //    {
-            //        await this.client.CreateDocumentAsync(UriFactory.CreateDocumentCollectionUri(databaseName, collectionName), family);
-            //        this.WriteToConsoleAndPromptToContinue("Created Family {0}", family.Id);
-            //    }
-            //    else
-            //    {
-            //        throw;
-            //    }
-            //}
+        }
+
+        private void ExecuteSqlStringSearch()
+        {
+            // Set some common query options
+            FeedOptions queryOptions = new FeedOptions
+            {
+                MaxItemCount = 10,  // more page size than max results
+                PartitionKey = new PartitionKey("Profiles"),
+                EnableScanInQuery = false,
+                EnableCrossPartitionQuery = false
+            };
+
+            // Now execute the same query via direct SQL
+            IQueryable<AuditEvent> auditQueryInSql = this.client.CreateDocumentQuery<AuditEvent>(
+                UriFactory.CreateDocumentCollectionUri(DatabaseName, CollectionName),
+                "SELECT * FROM c WHERE CONTAINS(c.PreviousObject, 'Andrew')",
+                queryOptions);
+
+            Console.WriteLine("Running direct SQL query...");
+
+            foreach (AuditEvent audit in auditQueryInSql)
+            {
+                Console.WriteLine("\tRead {0}", audit);
+            }
+        }
+
+        private void ExecuteDateSearch()
+        {
+            // Set some common query options
+            FeedOptions queryOptions = new FeedOptions
+            {
+                MaxItemCount = 10,  // more page size than max results
+                PartitionKey = new PartitionKey("Profiles"),
+                EnableScanInQuery = false,
+                EnableCrossPartitionQuery = false,
+                EnableLowPrecisionOrderBy = true
+            };
+
+            DateTime starTime = DateTime.Now.AddHours(-1);
+            DateTime endTime = DateTime.Now.AddHours(1);
+
+            IQueryable<AuditEvent> auditQuery = this.client.CreateDocumentQuery<AuditEvent>(
+                    UriFactory.CreateDocumentCollectionUri(DatabaseName, CollectionName), queryOptions)
+                .Where(a => a.CreatedDate >= starTime &&
+                            a.CreatedDate <= endTime)
+                .OrderByDescending(a => a.CreatedDate);
+
+            // The query is executed synchronously here, but can also be executed asynchronously via the IDocumentQuery<T> interface
+            Console.WriteLine("Running LINQ query...");
+
+            Console.WriteLine("No. of records found: {0}", auditQuery.Count());
+
+            foreach (AuditEvent audit in auditQuery)
+            {
+                Console.WriteLine("\tRead {0}", audit);
+            }
         }
     }
 }

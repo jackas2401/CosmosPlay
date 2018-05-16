@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Text;
 using Newtonsoft.Json;
 
-namespace CosmosPlay
+namespace CosmosTableAPI
 {
-    public class User
+    public class Group
     {
-        public long UserId { get; set; }
-        public string Username { get; set; }
+        public long GroupId { get; set; }
+        public string GroupName { get; set; }
+        public List<string> GroupMembers { get; set; }
 
         public override string ToString()
         {

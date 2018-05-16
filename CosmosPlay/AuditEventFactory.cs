@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using static CosmosPlay.AuditEvent;
 
 namespace CosmosPlay
 {
     public class AuditEventFactory
     {
-
         public static List<AuditEvent> GeneratAuditEvents(int creates, int amendments, int deletions)
         {
             List<AuditEvent> AuditEvents = new List<AuditEvent>();
@@ -14,26 +14,30 @@ namespace CosmosPlay
             Guid CorrelationToken = Guid.NewGuid();
             string IpAddress = "127.0.0.1";
             Random Random = new Random();
-            
+            int ttl = 60 * 5;
+            string ModuleId = "Profiles";
 
             for (int i = 0; i <= creates; i++)
             {
+                User newObject = new User
+                {
+                    UserId = Random.Next(),
+                    Username = "Jerry"
+                };
+
                 AuditEvents.Add(new AuditEvent()
                 {
                     AuditId = Guid.NewGuid().ToString(),
-                    Module = "BOSHost",
-                    ActionType = "Create",
+                    ModuleId = ModuleId,
+                    Action = ActionType.Create,
                     CreatedDate = DateTime.Now,
-                    UserName = "Andrew",
+                    UserName = "Tom",
                     IpAddress = IpAddress,
-                    CorrelationToken = CorrelationToken,
+                    CorrelationToken = Guid.NewGuid(),
                     PreviousObject = null,
-                    NewObject = new User()
-                    {
-                        UserId = Random.Next(),
-                        Username = "Andrew"
-                    }
-
+                    NewObject = newObject.ToString(),
+                    ObjectType = newObject.GetType().AssemblyQualifiedName,
+                    TimeToLive = ttl
                 });                
             }
 
@@ -41,63 +45,77 @@ namespace CosmosPlay
             {
                 int userId = Random.Next();
 
+                User previousObject = new User()
+                {
+                    UserId = userId,
+                    Username = "Andrew"
+                };
+
+                User newObject = new User()
+                {
+                    UserId = userId,
+                    Username = "Amended Andrew"
+                };
+
                 AuditEvents.Add(new AuditEvent()
                 {
                     AuditId = Guid.NewGuid().ToString(),
-                    Module = "BOSHost",
-                    ActionType = "Amend",
+                    ModuleId = ModuleId,
+                    Action = ActionType.Update,
                     CreatedDate = DateTime.Now,
                     UserName = "Andrew",
                     IpAddress = IpAddress,
                     CorrelationToken = CorrelationToken,
-                    PreviousObject = new User()
-                    {
-                        UserId = userId,
-                        Username = "Andrew"
-                    },
-                    NewObject = new User()
-                    {
-                        UserId = userId,
-                        Username = "Amended Andrew"
-                    }
+                    PreviousObject = previousObject.ToString(),
+                    NewObject = newObject.ToString(),
+                    ObjectType = newObject.GetType().AssemblyQualifiedName,
+                    TimeToLive = ttl
                 });          
             }
 
             for (int i = 0; i < deletions; i++)
             {
-                AuditEvents.Add(new AuditEvent()
+                Group previousObject = new Group()
                 {
-                    AuditId = Guid.NewGuid().ToString(),
-                    Module = "BOSHost",
-                    ActionType = "Delete",
-                    CreatedDate = DateTime.Now,
-                    UserName = "Andrew",
-                    IpAddress = IpAddress,
-                    CorrelationToken = CorrelationToken,
-                    PreviousObject = new Group()
-                    {
-                        GroupId = Random.Next(),
-                        GroupName = "Admin",
-                        GroupMembers = new List<string>(){"andrew", "david", "jackman"}
-                    },
-                    NewObject = null
-                });
+                    GroupId = Random.Next(),
+                    GroupName = "Admin",
+                    GroupMembers = new List<string>() {"andrew", "david", "jackman"}
+                };
 
                 AuditEvents.Add(new AuditEvent()
                 {
                     AuditId = Guid.NewGuid().ToString(),
-                    Module = "BOSHost",
-                    ActionType = "Delete",
+                    ModuleId = ModuleId,
+                    Action = ActionType.Delete,
                     CreatedDate = DateTime.Now,
                     UserName = "Andrew",
                     IpAddress = IpAddress,
                     CorrelationToken = CorrelationToken,
-                    PreviousObject = new User()
-                    {
-                        UserId = Random.Next(),
-                        Username = "Amended Andrew"
-                    },
-                    NewObject = null
+                    PreviousObject = previousObject.ToString(),
+                    NewObject = null,
+                    ObjectType = previousObject.GetType().AssemblyQualifiedName,
+                    TimeToLive = ttl
+                });
+
+                User previousUserObject = new User()
+                {
+                    UserId = Random.Next(),
+                    Username = "Amended Andrew"
+                };
+
+                AuditEvents.Add(new AuditEvent()
+                {
+                    AuditId = Guid.NewGuid().ToString(),
+                    ModuleId = ModuleId,
+                    Action = ActionType.Delete,
+                    CreatedDate = DateTime.Now,
+                    UserName = "Andrew",
+                    IpAddress = IpAddress,
+                    CorrelationToken = CorrelationToken,
+                    PreviousObject = previousUserObject.ToString(),
+                    NewObject = null,
+                    ObjectType = previousUserObject.GetType().AssemblyQualifiedName,
+                    TimeToLive = ttl
                 });
             }
 

@@ -7,10 +7,13 @@ namespace CosmosPlay
 {
     public class Group
     {
-        [JsonProperty(PropertyName = "groupId")]
         public long GroupId { get; set; }
         public string GroupName { get; set; }
         public List<string> GroupMembers { get; set; }
-        
+
+        public override string ToString()
+        {
+            return JsonConvert.SerializeObject(this);
+        }
     }
 }
