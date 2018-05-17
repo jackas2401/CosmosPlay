@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27428.2015
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CosmosPlay", "CosmosPlay\CosmosPlay.csproj", "{1615B053-DE09-408E-A2AF-16F9935995DF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CosmosPlaySQLAPI", "CosmosPlay\CosmosPlaySQLAPI.csproj", "{1615B053-DE09-408E-A2AF-16F9935995DF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KibanaPlay", "KibanaPlay\KibanaPlay.csproj", "{D79F1D5F-58C2-48BD-AEA0-5ACC9F271E97}"
 	ProjectSection(ProjectDependencies) = postProject

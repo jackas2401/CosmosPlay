@@ -10,7 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CosmosPlay\CosmosPlay.csproj" />
+    <ProjectReference Include="..\CosmosPlay\CosmosPlaySQLAPI.csproj" />
   </ItemGroup>
 
 </Project>
