@@ -16,6 +16,12 @@ namespace CosmosPlay
             Delete = 3
         }
 
+        public enum Source
+        {
+            Default = 0,
+            Pam = 1
+        }
+
         [JsonProperty(PropertyName = "moduleId")]
         public string ModuleId { get; set; }
         [JsonProperty(PropertyName = "id")]
@@ -23,6 +29,7 @@ namespace CosmosPlay
         //[JsonProperty(PropertyName = "id", ItemConverterType = int)]
         public ActionType Action { get; set; }
         public string ActionReason { get; set; }
+        public Source ActionSource { get; set; }
         public DateTime CreatedDate { get; set; }
         public string UserName { get; set; }
         public string IpAddress { get; set; }

@@ -94,7 +94,7 @@ namespace CosmosPlay
                 collectionDefinition,
                 new RequestOptions { OfferThroughput = 20000 } );
 
-            List<AuditEvent> AuditEvents = AuditEventFactory.GeneratAuditEvents(5, 5, 3);
+            List<AuditEvent> AuditEvents = AuditEventFactory.GeneratAuditEvents(10, 10, 5);
 
             await CreateAuditRecords(AuditEvents);
 
