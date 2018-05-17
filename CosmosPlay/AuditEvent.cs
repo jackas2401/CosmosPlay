@@ -23,6 +23,7 @@ namespace CosmosPlay
         public string AuditId { get; set; }
         //[JsonProperty(PropertyName = "id", ItemConverterType = int)]
         public ActionType Action { get; set; }
+        public string ActionReason { get; set; }
         public DateTime CreatedDate { get; set; }
         public string UserName { get; set; }
         public string IpAddress { get; set; }

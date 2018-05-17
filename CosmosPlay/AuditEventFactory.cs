@@ -14,7 +14,7 @@ namespace CosmosPlay
             Guid CorrelationToken = Guid.NewGuid();
             string IpAddress = "127.0.0.1";
             Random Random = new Random();
-            int ttl = 60 * 5;
+            int ttl = 60 * 60;
             string ModuleId = "Profiles";
 
             for (int i = 0; i <= creates; i++)
@@ -30,6 +30,7 @@ namespace CosmosPlay
                     AuditId = Guid.NewGuid().ToString(),
                     ModuleId = ModuleId,
                     Action = ActionType.Create,
+                    ActionReason = "New starter has joined as per request 1243",
                     CreatedDate = DateTime.Now,
                     UserName = "Tom",
                     IpAddress = IpAddress,
@@ -62,6 +63,7 @@ namespace CosmosPlay
                     AuditId = Guid.NewGuid().ToString(),
                     ModuleId = ModuleId,
                     Action = ActionType.Update,
+                    ActionReason = "Amended username as per request 2234",
                     CreatedDate = DateTime.Now,
                     UserName = "Andrew",
                     IpAddress = IpAddress,
@@ -87,6 +89,7 @@ namespace CosmosPlay
                     AuditId = Guid.NewGuid().ToString(),
                     ModuleId = ModuleId,
                     Action = ActionType.Delete,
+                    ActionReason = "Tidy up groups as no current members",
                     CreatedDate = DateTime.Now,
                     UserName = "Andrew",
                     IpAddress = IpAddress,
@@ -108,6 +111,7 @@ namespace CosmosPlay
                     AuditId = Guid.NewGuid().ToString(),
                     ModuleId = ModuleId,
                     Action = ActionType.Delete,
+                    ActionReason = "Leave request 23432423",
                     CreatedDate = DateTime.Now,
                     UserName = "Andrew",
                     IpAddress = IpAddress,
