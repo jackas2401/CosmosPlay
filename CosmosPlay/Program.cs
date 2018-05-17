@@ -13,11 +13,16 @@ namespace CosmosPlay
 {
     class Program
     {
-        private const string EndpointUri = "https://jackman-audit.documents.azure.com:443/";
-        private const string PrimaryKey = "YmwOBLjg3v9RBAfN61uOd82sJRlRNosEq6psQdmTa1zmRrnW9qQX2PyEc93XlSIEDv68LkgRmaRbzFOvzO1G1A==";
+        //private const string EndpointUri = "https://jackman-audit.documents.azure.com:443/";
+        //private const string PrimaryKey = "YmwOBLjg3v9RBAfN61uOd82sJRlRNosEq6psQdmTa1zmRrnW9qQX2PyEc93XlSIEDv68LkgRmaRbzFOvzO1G1A==";
+        //private const string DatabaseName = "JackmanAudit";
+        //private const string CollectionName = "AuditCollection";
+        
+        private const string EndpointUri = "https://localhost:8081/";
+        private const string PrimaryKey = "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
         private const string DatabaseName = "JackmanAudit";
         private const string CollectionName = "AuditCollection";
-        
+
         private DocumentClient client;
         static void Main(string[] args)
         {
@@ -47,7 +52,15 @@ namespace CosmosPlay
         {
             this.client = new DocumentClient(new Uri(EndpointUri), PrimaryKey);
 
-            await this.client.DeleteDatabaseAsync(UriFactory.CreateDatabaseUri(DatabaseName));
+            try
+            {
+                await this.client.DeleteDatabaseAsync(UriFactory.CreateDatabaseUri(DatabaseName));
+            }
+            catch (DocumentClientException dce)
+            {
+                Console.WriteLine("Database not found!");                
+            }
+            
 
             await this.client.CreateDatabaseIfNotExistsAsync(new Database { Id = DatabaseName });
 
